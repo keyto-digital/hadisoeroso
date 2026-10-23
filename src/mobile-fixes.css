@@ -1,0 +1,75 @@
+/* Silsilah: public view, touch panning, and scrollable information widgets */
+html, body, #root { min-height: 100%; }
+.app { min-height: 100dvh; }
+.main { min-height: 0; }
+.canvas-wrap { min-width: 0; min-height: 0; }
+.tree-viewport {
+  touch-action: none;
+  overscroll-behavior: contain;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.tree-canvas { transform-origin: 0 0; will-change: transform; }
+.card, .card * { -webkit-user-select: none; user-select: none; }
+.card-photo { -webkit-user-drag: none; pointer-events: none; }
+.widgets {
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+.widget { min-width: 0; flex: 0 0 auto; }
+.widget-body {
+  min-width: 0;
+  max-height: min(42vh, 360px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+/* Widget Ringkasan: hilangkan baris jumlah pasangan/pernikahan yang tidak diperlukan. */
+.widget:has(.stat-grid) .widget-body > .bar-row { display: none !important; }
+.widgets-scrim { touch-action: pan-y; }
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: rgba(8, 14, 28, .76);
+  -webkit-overflow-scrolling: touch;
+}
+.login-overlay .login-wrap { min-height: 100dvh; }
+.public-login-btn { white-space: nowrap; flex: 0 0 auto; }
+@media (max-width: 760px) {
+  .topbar { gap: 7px; padding: 8px 10px; min-height: 58px; height: auto; }
+  .topbar-name { font-size: 15px; }
+  .topbar-sub { font-size: 10px; }
+  .topbar-logo { width: 34px; height: 34px; }
+  .public-login-btn { font-size: 12px; padding: 8px 10px; }
+  .toolbar { gap: 8px; padding: 8px 10px; }
+  .toolbar > div:first-child { flex: 1 1 100%; min-width: 0; }
+  .toolbar > div:first-child .input { width: 100% !important; min-width: 0; }
+  .toolbar .legend { font-size: 11px; }
+  .main { min-height: 0; }
+  .widgets {
+    width: min(92vw, 360px);
+    max-width: 92vw;
+    max-height: calc(100dvh - 12px);
+    padding: 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .widget-body {
+    max-height: 38dvh;
+    overflow-y: auto;
+  }
+  .footer-note { flex-wrap: wrap; gap: 5px 12px; font-size: 10.5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: none; }
+}
