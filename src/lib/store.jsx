@@ -243,18 +243,93 @@ export function StoreProvider({ children }) {
     return (data || []).map(u => ({ id: u.id, email: u.email, nama: u.nama, role: u.role }))
   }, [])
 
-  const inviteUser = useCallback(async ({ email, nama, role = 'anggota', password }) => {
-    if (DEMO) throw new Error('Pembuatan akun resmi hanya tersedia saat terhubung ke Supabase.')
-    if (!['admin', 'anggota'].includes(role)) throw new Error('Peran tidak valid.')
-    // Semua akun baru dibuat oleh Edge Function. Service-role key tidak pernah
-    // diletakkan di browser; server memverifikasi bahwa pemanggil adalah superadmin.
-    const { data, error } = await supabase.functions.invoke('admin-create-user', {
-      body: { email: email.trim().toLowerCase(), nama, role, password },
-    })
-    if (error) throw new Error(error.message || 'Gagal membuat akun.')
-    if (!data?.ok) throw new Error(data?.error || 'Gagal membuat akun.')
+  
+  const inviteUser = useCallback(async ({
+    email,
+    nama,
+    role = 'anggota',
+    password,
+  }) => {
+    if (DEMO) {
+      throw new Error(
+        'Pembuatan akun resmi hanya tersedia saat terhubung ke Supabase.'
+      )
+    }
+
+    const cleanEmail = String(email || '').trim().toLowerCase()
+    const cleanNama = String(nama || '').trim()
+    const cleanPassword = String(password || '')
+
+    // Validasi lokal agar pengguna langsung mendapat pesan yang jelas.
+    if (!cleanNama) {
+      throw new Error('Nama anggota wajib diisi.')
+    }
+
+    if (!cleanEmail) {
+      throw new Error('Email wajib diisi.')
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      throw new Error('Format email tidak valid.')
+    }
+
+    if (cleanPassword.length < 8) {
+      throw new Error(
+        'Kata sandi minimal 8 karakter. Silakan periksa kembali.'
+      )
+    }
+
+    if (!['admin', 'anggota'].includes(role)) {
+      throw new Error('Peran akun tidak valid.')
+    }
+
+    // Semua akun resmi dibuat melalui Edge Function.
+    const { data, error } = await supabase.functions.invoke(
+      'admin-create-user',
+      {
+        body: {
+          email: cleanEmail,
+          nama: cleanNama,
+          role,
+          password: cleanPassword,
+        },
+      }
+    )
+
+    // Ambil pesan asli dari respons Edge Function jika tersedia.
+    if (error) {
+      let detail = ''
+
+      try {
+        const context = error.context
+
+        if (context && typeof context.json === 'function') {
+          const responseBody = await context.clone().json()
+          detail = responseBody?.error || responseBody?.message || ''
+        }
+      } catch {
+        // Respons bukan JSON atau detail tidak dapat dibaca.
+      }
+
+      if (detail) {
+        throw new Error(detail)
+      }
+
+      throw new Error(
+        'Gagal menghubungi layanan pembuatan akun. ' +
+        'Periksa koneksi dan coba kembali.'
+      )
+    }
+
+    if (!data?.ok) {
+      throw new Error(
+        data?.error || 'Akun gagal dibuat. Silakan coba kembali.'
+      )
+    }
+
     return data.user
   }, [])
+
 
   const removeUser = useCallback(async ({ id, email }) => {
     if (DEMO) throw new Error('Penghapusan akun resmi hanya tersedia saat terhubung ke Supabase.')
