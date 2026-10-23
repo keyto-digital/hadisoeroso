@@ -89,8 +89,8 @@ export default function TreeView({ people, units, rootId, onOpen, highlightPath,
     if (!el) return
     // Capture on the viewport so moving outside the original touch target doesn't lose the gesture.
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType })
-    try { e.currentTarget.setPointerCapture(e.pointerId) } catch {}
-
+    // Jangan capture pointer pada klik biasa: capture di viewport dapat
+    // mengalihkan target klik dari PersonCard. Capture dilakukan saat drag dimulai.
     const pts = Array.from(pointers.current.values()).slice(0, 2)
     if (pts.length === 2) {
       const mid = getMidpoint(pts[0], pts[1])
@@ -130,6 +130,11 @@ export default function TreeView({ people, units, rootId, onOpen, highlightPath,
       const dx = e.clientX - g.startX
       const dy = e.clientY - g.startY
       if (Math.abs(dx) + Math.abs(dy) > 4) {
+        if (!g.moved) {
+          // Setelah gerakan melewati ambang drag, capture agar geser tetap
+          // berjalan meskipun pointer keluar dari viewport.
+          try { el.setPointerCapture(e.pointerId) } catch {}
+        }
         g.moved = true
         setDragging(true)
         setTf(t => ({ x: g.tx + dx, y: g.ty + dy, k: t.k }))
